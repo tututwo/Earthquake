@@ -1,17 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
+import { Effects, Text,OrbitControls } from "@react-three/drei";
 
-import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, Glitch, Bloom } from "@react-three/postprocessing";
-import { GlitchMode } from 'postprocessing'
+import { GlitchMode } from "postprocessing";
 
-import * as THREE from "three"
+import * as THREE from "three";
 import * as d3 from "d3";
-
+import { gsap } from "gsap";
 import { generateAttributes, vertexOnSphere } from "./utility/utils";
 
-import Land from "./ChartComponents/Land"
+import Land from "./ChartComponents/Land";
 import Earthquakes from "./ChartComponents/Earthquakes";
+import { useFrame } from "@react-three/fiber";
 
+const currentTimestampFormat = d3.utcFormat("%H:%M %b.%e, %Y");
 // initial value for position
 const vertex_Num = 5000;
 const filledArray = [...Array(vertex_Num)].map(() => {
@@ -60,8 +62,12 @@ export default function ChartContainer() {
    * * Load Data * *
    *  * * * * * * * * * * */
   const [earthquake, setEarthquake] = useState(filledArray);
-  const [landLines, setLandLines] = useState([new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0)]);
+  const [landLines, setLandLines] = useState([
+    new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, 1, 0),
+  ]);
 
+  const [toBeFilteredEarthquake, setToBeFilteredEarthquake] = useState(filledArray)
   useEffect(() => {
     async function fetchData() {
       let promises = [d3.csv("/earthquakes.csv"), d3.json("/topoland.json")];
@@ -76,7 +82,15 @@ export default function ChartContainer() {
           depth: +d.depth,
         }))
       );
-      
+      setToBeFilteredEarthquake(
+        EQData.map((d) => ({
+          latitude: +d.latitude,
+          longitude: +d.longitude,
+          date: new Date(d.date),
+          magnitude: +d.magnitude,
+          depth: +d.depth,
+        }))
+      );
       const tempPosition = [];
       LandData.coordinates.forEach((landSection) => {
         //* for each land section
@@ -98,7 +112,7 @@ export default function ChartContainer() {
           // landPositions[i * 6 + 5] = secondPoint.z;
         }
       });
-      setLandLines(tempPosition)
+      setLandLines(tempPosition);
     }
 
     fetchData();
@@ -106,9 +120,11 @@ export default function ChartContainer() {
   /* * * * * * * * * * * *
    * * Convert Data into Scaled buffer data/typed array * *
    *  * * * * * * * * * * */
-  const firstRender = useMemo(() => "first render", []);
 
+  let sliceValue = useRef();
+  
   const earthquakeAttributes = useMemo(() => {
+
     return generateAttributes(
       earthquake,
       positions,
@@ -117,8 +133,40 @@ export default function ChartContainer() {
       time,
       colorSchemes[16]
     );
-  }, [earthquake, firstRender]);
+  }, [earthquake,sliceValue.current]);
+  
+  const timeScale = d3
+    .scaleLinear()
+    .domain(d3.extent(earthquake, (d) => d.date))
+    .range([0, 1]);
 
+  const groupRef = useRef();
+  useFrame((state, delta) => {
+    groupRef.current.rotation.y += delta / 10;
+  });
+
+
+  // filter time < utc secs: earthquake.filter( d.time < 1494374400000)
+  // animate this "time"
+  useLayoutEffect(() => {
+    sliceValue.current = 1494374400000
+    let context = gsap.context(() => {
+      gsap.to(sliceValue, {
+        current: 1588291200000,
+        duration: 100,
+        onUpdate: () => {
+  
+          setEarthquake(
+            toBeFilteredEarthquake.filter((d) => +d.date <=(sliceValue.current))
+          );
+          
+        },
+      });
+    });
+    return () => context.revert();
+  }, [toBeFilteredEarthquake]);
+
+  // console.log(earthquake)
   return (
     <>
       <OrbitControls makeDefault />
@@ -132,8 +180,15 @@ export default function ChartContainer() {
         />
         <Bloom mipmapBlur intensity={2.0} luminanceThreshold={0.2} />
       </EffectComposer>
-      {/* <Land landPositions={landLines} /> */}
-      <Earthquakes earthquakeAttributes={earthquakeAttributes} />
+      <Text>{currentTimestampFormat(sliceValue.current)}</Text>
+      <group ref={groupRef}>
+        {/* <Land landPositions={landLines} /> */}
+        <Earthquakes
+          earthquakeAttributes={earthquakeAttributes}
+          timeScale={timeScale}
+
+        />
+      </group>
     </>
   );
 }

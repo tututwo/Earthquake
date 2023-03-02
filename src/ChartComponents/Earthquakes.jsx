@@ -1,14 +1,17 @@
 import * as THREE from "three";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, extend } from "@react-three/fiber";
-import { Effects } from "@react-three/drei";
+import { Effects, Text } from "@react-three/drei";
 // import { UnrealBloomPass } from "three-stdlib";
 
 // extend({ UnrealBloomPass });
 import vertexShader from "../shader/vertexShader.glsl";
 import fragmentShader from "../shader/fragmentShader.glsl";
-export default function Earthquake({ earthquakeAttributes }) {
+
+let timeProgress = 0;
+
+export default function Earthquake({ earthquakeAttributes, timeScale }) {
   const uniforms = useMemo(
     () => ({
       progress: { value: 0 },
@@ -18,6 +21,7 @@ export default function Earthquake({ earthquakeAttributes }) {
     }),
     []
   );
+  const [scaledTime, setScaleTime] = useState(0);
 
   const pointsRef = useRef();
 
@@ -28,13 +32,18 @@ export default function Earthquake({ earthquakeAttributes }) {
     pointsRef.current.geometry.attributes.time.needsUpdate = true;
   });
 
-  useFrame((state, delta) => {
-    pointsRef.current.rotation.y += delta / 10;
+  // useFrame((state, delta) => {
 
-    const progress = pointsRef.current.material.uniforms.progress.value;
-    pointsRef.current.material.uniforms.progress.value =
-      progress + uniforms.speed.value;
-  });
+  //   const progress = pointsRef.current.material.uniforms.progress.value;
+  //   pointsRef.current.material.uniforms.progress.value =
+  //     progress + uniforms.speed.value;
+
+  //   timeProgress += uniforms.speed.value;
+  //   setScaleTime(Math.abs(timeProgress - Math.floor(timeProgress)));
+  // });
+
+  // const invertedTime = timeScale.invert(scaledTime);
+  // console.log(new Date(currentDate.current));
 
   return (
     <>
@@ -42,6 +51,7 @@ export default function Earthquake({ earthquakeAttributes }) {
         threshhold has to be 1, so nothing at all gets bloom by default
         <unrealBloomPass threshold={1} strength={10} radius={0.4} />
       </Effects> */}
+
       <points ref={pointsRef}>
         <bufferGeometry>
           <bufferAttribute

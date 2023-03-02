@@ -7,6 +7,7 @@ attribute float size;
 attribute float time;
 
 varying vec3 vColor;
+varying float vWhenEarthquakeHappen;
 // Simplex 2D noise
 vec3 permute(vec3 x) {
   return mod(((x * 34.0) + 1.0) * x, 289.0);
@@ -45,6 +46,10 @@ float nearTime(float eventTime, float progress) {
     return cos((1.0 - distance/timeWindow) * 3.1415926);
   }
 }
+float whetherEarthquakeHappen(float eventTime, float progress) {
+  float distance = abs(eventTime - abs(progress - floor(progress)));
+  return 1.0 - step(timeWindow, distance);
+}
 void main() {
 
   float nearTime = nearTime(time, progress);
@@ -62,4 +67,5 @@ void main() {
   gl_Position = projectionMatrix * modelViewMatrix * localPosition;
   gl_PointSize = size;
   vColor = color;
+  vWhenEarthquakeHappen = whetherEarthquakeHappen(time, progress);
 }
