@@ -32,15 +32,15 @@ export default function Earthquake({ earthquakeAttributes, timeScale }) {
     pointsRef.current.geometry.attributes.time.needsUpdate = true;
   });
 
-  // useFrame((state, delta) => {
+  useFrame((state, delta) => {
 
-  //   const progress = pointsRef.current.material.uniforms.progress.value;
-  //   pointsRef.current.material.uniforms.progress.value =
-  //     progress + uniforms.speed.value;
+    const progress = pointsRef.current.material.uniforms.progress.value;
+    pointsRef.current.material.uniforms.progress.value =
+      progress + uniforms.speed.value;
 
-  //   timeProgress += uniforms.speed.value;
-  //   setScaleTime(Math.abs(timeProgress - Math.floor(timeProgress)));
-  // });
+    timeProgress += uniforms.speed.value;
+    setScaleTime(Math.abs(timeProgress - Math.floor(timeProgress)));
+  });
 
   // const invertedTime = timeScale.invert(scaledTime);
   // console.log(new Date(currentDate.current));

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
-import { Effects, Text,OrbitControls } from "@react-three/drei";
+import { Effects, Text, OrbitControls } from "@react-three/drei";
 
 import { EffectComposer, Glitch, Bloom } from "@react-three/postprocessing";
 import { GlitchMode } from "postprocessing";
@@ -67,7 +67,8 @@ export default function ChartContainer() {
     new THREE.Vector3(0, 1, 0),
   ]);
 
-  const [toBeFilteredEarthquake, setToBeFilteredEarthquake] = useState(filledArray)
+  const [toBeFilteredEarthquake, setToBeFilteredEarthquake] =
+    useState(filledArray);
   useEffect(() => {
     async function fetchData() {
       let promises = [d3.csv("/earthquakes.csv"), d3.json("/topoland.json")];
@@ -122,9 +123,8 @@ export default function ChartContainer() {
    *  * * * * * * * * * * */
 
   let sliceValue = useRef();
-  
-  const earthquakeAttributes = useMemo(() => {
 
+  const earthquakeAttributes = useMemo(() => {
     return generateAttributes(
       earthquake,
       positions,
@@ -133,8 +133,8 @@ export default function ChartContainer() {
       time,
       colorSchemes[16]
     );
-  }, [earthquake,sliceValue.current]);
-  
+  }, [earthquake, sliceValue.current]);
+
   const timeScale = d3
     .scaleLinear()
     .domain(d3.extent(earthquake, (d) => d.date))
@@ -145,21 +145,18 @@ export default function ChartContainer() {
     groupRef.current.rotation.y += delta / 10;
   });
 
-
   // filter time < utc secs: earthquake.filter( d.time < 1494374400000)
   // animate this "time"
   useLayoutEffect(() => {
-    sliceValue.current = 1494374400000
+    sliceValue.current = 1494374400000;
     let context = gsap.context(() => {
       gsap.to(sliceValue, {
         current: 1588291200000,
         duration: 100,
         onUpdate: () => {
-  
           setEarthquake(
-            toBeFilteredEarthquake.filter((d) => +d.date <=(sliceValue.current))
+            toBeFilteredEarthquake.filter((d) => +d.date <= sliceValue.current)
           );
-          
         },
       });
     });
@@ -180,13 +177,12 @@ export default function ChartContainer() {
         />
         <Bloom mipmapBlur intensity={2.0} luminanceThreshold={0.2} />
       </EffectComposer>
-      <Text>{currentTimestampFormat(sliceValue.current)}</Text>
-      <group ref={groupRef}>
+      {/* <Text>{currentTimestampFormat(sliceValue.current)}</Text> */}
+      <group ref={groupRef} scale={.4}>
         {/* <Land landPositions={landLines} /> */}
         <Earthquakes
           earthquakeAttributes={earthquakeAttributes}
           timeScale={timeScale}
-
         />
       </group>
     </>
